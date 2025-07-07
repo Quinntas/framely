@@ -386,109 +386,109 @@ export default function Home() {
       </motion.div>
 
       <div className="flex-1 overflow-hidden relative">
-        <ResizablePanelGroup direction="horizontal" className="h-full">
+        <ResizablePanelGroup direction="horizontal">
           {/* Left History Panel */}
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="hidden lg:block">
+          <ResizablePanel defaultSize={25} minSize={20} maxSize={35} className="hidden lg:block">
             <motion.div 
-              className="h-full flex flex-col"
+              className="h-full border-r flex flex-col"
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
             >
-              <div className="p-4 border-b">
-                <h2 className="font-pixel text-sm tracking-wider">HISTORY</h2>
-              </div>
-              
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-3">
-                  <AnimatePresence>
-                    {history.map((item, index) => (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ delay: index * 0.05, duration: 0.3 }}
-                        onClick={() => useHistoryItem(item)}
-                        className={`p-3 border rounded cursor-pointer transition-all hover:bg-accent ${
-                          selectedAnimation?.id === item.animation.id 
-                            ? 'border-primary bg-accent' 
-                            : ''
-                        }`}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+          <div className="p-4 border-b">
+            <h2 className="font-pixel text-sm tracking-wider">HISTORY</h2>
+          </div>
+          
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-3">
+              <AnimatePresence>
+                {history.map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ delay: index * 0.05, duration: 0.3 }}
+                    onClick={() => useHistoryItem(item)}
+                    className={`p-3 border rounded cursor-pointer transition-all hover:bg-accent ${
+                      selectedAnimation?.id === item.animation.id 
+                        ? 'border-primary bg-accent' 
+                        : ''
+                    }`}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <p className="text-xs font-pixel line-clamp-2 tracking-wide">
+                          {item.prompt}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1 font-pixel">
+                          {new Date(item.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          deleteHistoryItem(item.id)
+                          loadHistory()
+                        }}
+                        className="h-6 w-6 p-0"
                       >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <p className="text-xs font-pixel line-clamp-2 tracking-wide">
-                              {item.prompt}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1 font-pixel">
-                              {new Date(item.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              deleteHistoryItem(item.id)
-                              loadHistory()
-                            }}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="outline" className="text-xs font-pixel">
+                        {item.animation.config.frameCount} FRAMES
+                      </Badge>
+                      <Badge variant="outline" className="text-xs font-pixel">
+                        {item.animation.config.temperature}T
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-5 gap-1">
+                      {item.animation.frames.slice(0, 5).map((frame, index) => (
+                        <div
+                          key={frame.id}
+                          className="aspect-square border rounded overflow-hidden"
+                        >
+                          <img
+                            src={frame.dataUrl}
+                            alt={`Frame ${index + 1}`}
+                            className="w-full h-full object-contain bg-black"
+                            style={{ imageRendering: 'pixelated' }}
+                          />
                         </div>
-                        
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline" className="text-xs font-pixel">
-                            {item.animation.config.frameCount} FRAMES
-                          </Badge>
-                          <Badge variant="outline" className="text-xs font-pixel">
-                            {item.animation.config.temperature}T
-                          </Badge>
-                        </div>
-                        
-                        <div className="grid grid-cols-5 gap-1">
-                          {item.animation.frames.slice(0, 5).map((frame, index) => (
-                            <div
-                              key={frame.id}
-                              className="aspect-square border rounded overflow-hidden"
-                            >
-                              <img
-                                src={frame.dataUrl}
-                                alt={`Frame ${index + 1}`}
-                                className="w-full h-full object-contain bg-black"
-                                style={{ imageRendering: 'pixelated' }}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                  
-                  {history.length === 0 && (
-                    <motion.div 
-                      className="text-center text-muted-foreground py-8"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.5 }}
-                    >
-                      <History className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p className="text-xs font-pixel tracking-wider">NO HISTORY YET</p>
-                    </motion.div>
-                  )}
-                </div>
-              </ScrollArea>
+                      ))}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              
+              {history.length === 0 && (
+                <motion.div 
+                  className="text-center text-muted-foreground py-8"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <History className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-xs font-pixel tracking-wider">NO HISTORY YET</p>
+                </motion.div>
+              )}
+            </div>
+            </ScrollArea>
             </motion.div>
           </ResizablePanel>
 
           <ResizableHandle withHandle className="hidden lg:flex" />
 
           {/* Main Canvas Area */}
-          <ResizablePanel defaultSize={60} minSize={40}>
+          <ResizablePanel defaultSize={50} minSize={30}>
             <motion.div 
               className="h-full flex flex-col"
               initial={{ scale: 0.95, opacity: 0 }}
@@ -683,86 +683,87 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-                    {/* Chat Interface */}
-          <motion.div
-            className="border-t p-4 shrink-0"
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.3 }}
-          >
-            <div className="max-w-4xl mx-auto">
-              <div className="flex items-end gap-2 sm:gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-end gap-2 bg-background border rounded-lg p-3">
-                    <Textarea
-                      value={promptStructure.customPrompt}
-                      onChange={(e) => setPromptStructure(prev => ({ ...prev, customPrompt: e.target.value }))}
-                      placeholder="Describe your pixel art animation..."
-                      className="min-h-[60px] max-h-[120px] resize-none border-0 bg-transparent text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
-                      style={{ 
-                        height: 'auto',
-                        minHeight: '60px',
-                        maxHeight: '120px'
-                      }}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement
-                        target.style.height = 'auto'
-                        target.style.height = Math.min(target.scrollHeight, 120) + 'px'
-                      }}
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Upload className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleImprovePrompt}
-                        disabled={isImprovingPrompt}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Zap className="h-4 w-4" />
-                      </Button>
+              {/* Chat Interface */}
+              <motion.div
+                className="border-t p-4 shrink-0"
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4, duration: 0.3 }}
+              >
+                <div className="max-w-4xl mx-auto">
+                  <div className="flex items-end gap-2 sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-end gap-2 bg-background border rounded-lg p-3">
+                        <Textarea
+                          value={promptStructure.customPrompt}
+                          onChange={(e) => setPromptStructure(prev => ({ ...prev, customPrompt: e.target.value }))}
+                          placeholder="Describe your pixel art animation..."
+                          className="min-h-[60px] max-h-[120px] resize-none border-0 bg-transparent text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+                          style={{ 
+                            height: 'auto',
+                            minHeight: '60px',
+                            maxHeight: '120px'
+                          }}
+                          onInput={(e) => {
+                            const target = e.target as HTMLTextAreaElement
+                            target.style.height = 'auto'
+                            target.style.height = Math.min(target.scrollHeight, 120) + 'px'
+                          }}
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Upload className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleImprovePrompt}
+                            disabled={isImprovingPrompt}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Zap className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
+                    
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button
+                        onClick={handleGenerate}
+                        disabled={isGenerating}
+                        className="font-pixel text-xs tracking-wider h-12 px-6"
+                      >
+                        {isGenerating ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            GEN...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            GENERATE
+                          </>
+                        )}
+                      </Button>
+                    </motion.div>
                   </div>
                 </div>
-                
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button
-                    onClick={handleGenerate}
-                    disabled={isGenerating}
-                    className="font-pixel text-xs tracking-wider h-12 px-6"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        GEN...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        GENERATE
-                      </>
-                    )}
-                  </Button>
-                </motion.div>
-              </div>
-            </div>
-          </motion.div>
+              </motion.div>
             </motion.div>
           </ResizablePanel>
 
           <ResizableHandle withHandle className="hidden xl:flex" />
 
           {/* Right Configuration Panel */}
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="hidden xl:block">
+          <ResizablePanel defaultSize={25} minSize={20} maxSize={35} className="hidden xl:block">
+
             <motion.div 
-              className="h-full flex flex-col"
+              className="h-full border-l flex flex-col"
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.4, duration: 0.5 }}
