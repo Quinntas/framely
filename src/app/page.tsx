@@ -13,8 +13,10 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/c
 import {Slider} from '@/components/ui/slider'
 import {ResizableHandle, ResizablePanel, ResizablePanelGroup} from '@/components/ui/resizable'
 import {toast} from 'sonner'
-import {Download, History, Palette, Pause, Play, Plus, RefreshCw, Sparkles, Trash2, Upload, Zap} from 'lucide-react'
+import {Download, History, Palette, Pause, Play, Plus, RefreshCw, Sparkles, Trash2, Upload, Zap, Edit3} from 'lucide-react'
 import {ModeToggle} from '@/components/mode-toggle'
+import {Tooltip, TooltipContent, TooltipTrigger} from '@/components/ui/tooltip'
+import Link from 'next/link'
 
 import {
   deleteHistoryItem,
@@ -63,6 +65,8 @@ export default function Home() {
     const [inBetweenPrompt, setInBetweenPrompt] = useState<PromptStructure>(promptStructure)
     const [isDragOver, setIsDragOver] = useState(false)
     const [showHistory, setShowHistory] = useState(false)
+    const [isEditingName, setIsEditingName] = useState(false)
+    const [tempAnimationName, setTempAnimationName] = useState('')
 
     const fileInputRef = useRef<HTMLInputElement>(null)
     const animationIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -227,7 +231,14 @@ export default function Home() {
             background: parts[3] || 'no bg',
             customPrompt: parts.slice(4).join(', ') || ''
         })
-        setSelectedAnimation(item.animation)
+        
+        // Ensure animation has a name property
+        const animationWithName = {
+            ...item.animation,
+            name: item.animation.name || `${parts[0] || '8-bit'} ${parts[1] || 'character'}`
+        }
+        
+        setSelectedAnimation(animationWithName)
         setActiveFrame(0)
         setCurrentAnimations(prev => ({
             ...prev,
@@ -254,6 +265,26 @@ export default function Home() {
         setInBetweenConfig(config)
         setInBetweenPrompt(promptStructure)
         setShowInBetweenDialog(true)
+    }
+
+    const handleStartEditingName = () => {
+        if (selectedAnimation) {
+            setTempAnimationName(selectedAnimation.name)
+            setIsEditingName(true)
+        }
+    }
+
+    const handleSaveAnimationName = () => {
+        if (selectedAnimation && tempAnimationName.trim()) {
+            setSelectedAnimation(prev => prev ? {...prev, name: tempAnimationName.trim()} : null)
+            setIsEditingName(false)
+            setTempAnimationName('')
+        }
+    }
+
+    const handleCancelEditingName = () => {
+        setIsEditingName(false)
+        setTempAnimationName('')
     }
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -304,6 +335,7 @@ export default function Home() {
 
             const newAnimation: PixelArtAnimation = {
                 id: `animation_${Date.now()}`,
+                name: 'Custom Animation',
                 frames,
                 config: {...config, frameCount: frames.length},
                 prompt: 'Custom uploaded animation',
@@ -362,8 +394,82 @@ export default function Home() {
                         <Palette className="h-5 w-5"/>
                         <h1 className="text-sm font-pixel tracking-wider">FRAMELY</h1>
                     </div>
-                    <div className="text-xs text-muted-foreground font-pixel hidden sm:block">
-                        {selectedAnimation ? `${selectedAnimation.frames.length} FRAMES • ${fps} FPS` : 'NO ANIMATION LOADED'}
+                    
+                    {/* Animation Name */}
+                    <div className="flex items-center gap-2 flex-1 justify-center">
+                        {selectedAnimation && (
+                            <div className="flex items-center gap-2">
+                                {isEditingName ? (
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={tempAnimationName}
+                                            onChange={(e) => setTempAnimationName(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleSaveAnimationName()
+                                                if (e.key === 'Escape') handleCancelEditingName()
+                                            }}
+                                            className="bg-transparent border-b border-primary text-sm font-pixel tracking-wider focus:outline-none min-w-0 max-w-48"
+                                            autoFocus
+                                        />
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={handleSaveAnimationName}
+                                            className="h-6 w-6 p-0"
+                                        >
+                                            ✓
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={handleCancelEditingName}
+                                            className="h-6 w-6 p-0"
+                                        >
+                                            ✕
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        <h2 className="text-sm font-pixel tracking-wider text-center">
+                                            {selectedAnimation.name}
+                                        </h2>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={handleStartEditingName}
+                                                    className="h-6 w-6 p-0 opacity-70 hover:opacity-100"
+                                                >
+                                                    <Edit3 className="h-3 w-3"/>
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Edit animation name</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                        <div className="text-xs text-muted-foreground font-pixel hidden sm:block">
+                            {selectedAnimation ? `${selectedAnimation.frames.length} FRAMES • ${fps} FPS` : 'NO ANIMATION LOADED'}
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            className="font-pixel text-xs tracking-wider"
+                        >
+                            <Link href="/editor">
+                                <Palette className="h-4 w-4 mr-2"/>
+                                EDITOR
+                            </Link>
+                        </Button>
                     </div>
                 </div>
                 <ModeToggle/>
@@ -372,7 +478,7 @@ export default function Home() {
             <div className="flex-1 overflow-hidden relative">
                 <ResizablePanelGroup direction="horizontal">
                     {/* Left History Panel */}
-                    <ResizablePanel defaultSize={18} minSize={18} maxSize={35} className="hidden lg:block">
+                    <ResizablePanel defaultSize={15} minSize={15} maxSize={35} className="hidden lg:block">
                         <motion.div
                             className="h-full border-r flex flex-col"
                             initial={{x: -20, opacity: 0}}
@@ -403,8 +509,11 @@ export default function Home() {
                                                 whileTap={{scale: 0.98}}
                                             >
                                                 <div className="flex items-start justify-between mb-2">
-                                                    <div className="flex-1">
-                                                        <p className="text-xs font-pixel line-clamp-2 tracking-wide">
+                                                    <div className="flex-1 min-w-0 mr-2">
+                                                        <p className="text-xs font-pixel font-semibold tracking-wide truncate mb-1">
+                                                            {item.animation.name}
+                                                        </p>
+                                                        <p className="text-xs font-pixel line-clamp-2 tracking-wide text-muted-foreground">
                                                             {item.prompt}
                                                         </p>
                                                         <p className="text-xs text-muted-foreground mt-1 font-pixel">
@@ -419,7 +528,7 @@ export default function Home() {
                                                             deleteHistoryItem(item.id)
                                                             loadHistory()
                                                         }}
-                                                        className="h-6 w-6 p-0"
+                                                        className="h-6 w-6 p-0 shrink-0"
                                                     >
                                                         <Trash2 className="h-3 w-3"/>
                                                     </Button>
@@ -472,7 +581,7 @@ export default function Home() {
                     <ResizableHandle withHandle className="hidden lg:flex"/>
 
                     {/* Main Canvas Area */}
-                    <ResizablePanel defaultSize={50} minSize={30}>
+                    <ResizablePanel defaultSize={56} minSize={30}>
                         <motion.div
                             className="h-full flex flex-col"
                             initial={{scale: 0.95, opacity: 0}}
@@ -594,6 +703,20 @@ export default function Home() {
                                                 <span className="hidden sm:inline">DOWNLOAD</span>
                                             </Button>
                                         </motion.div>
+
+                                        <motion.div whileHover={{scale: 1.05}} whileTap={{scale: 0.95}}>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                asChild
+                                                className="font-pixel text-xs tracking-wider"
+                                            >
+                                                <Link href={`/editor?animationId=${selectedAnimation.id}`}>
+                                                    <Palette className="h-4 w-4 mr-1"/>
+                                                    <span className="hidden sm:inline">EDIT</span>
+                                                </Link>
+                                            </Button>
+                                        </motion.div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -674,75 +797,87 @@ export default function Home() {
 
                             {/* Chat Interface */}
                             <motion.div
-                                className="border-t p-4 shrink-0"
+                                className="border-t p-4 flex-1 flex flex-col"
                                 initial={{y: 50, opacity: 0}}
                                 animate={{y: 0, opacity: 1}}
                                 transition={{delay: 0.4, duration: 0.3}}
                             >
-                                <div className="max-w-4xl mx-auto">
-                                    <div className="flex items-end gap-2 sm:gap-4">
+                                <div className="max-w-4xl mx-auto h-full flex flex-col">
+                                    <div className="flex gap-3 h-full">
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-end gap-2 bg-background border rounded-lg p-3">
-                                                <Textarea
-                                                    value={promptStructure.customPrompt}
-                                                    onChange={(e) => setPromptStructure(prev => ({
-                                                        ...prev,
-                                                        customPrompt: e.target.value
-                                                    }))}
-                                                    placeholder="Describe your pixel art animation..."
-                                                    className="min-h-[60px] max-h-[120px] resize-none border-0 bg-transparent text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
-                                                    style={{
-                                                        height: 'auto',
-                                                        minHeight: '60px',
-                                                        maxHeight: '120px'
-                                                    }}
-                                                    onInput={(e) => {
-                                                        const target = e.target as HTMLTextAreaElement
-                                                        target.style.height = 'auto'
-                                                        target.style.height = Math.min(target.scrollHeight, 120) + 'px'
-                                                    }}
-                                                />
-                                                <div className="flex gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => fileInputRef.current?.click()}
-                                                        className="h-8 w-8 p-0"
-                                                    >
-                                                        <Upload className="h-4 w-4"/>
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={handleImprovePrompt}
-                                                        disabled={isImprovingPrompt}
-                                                        className="h-8 w-8 p-0"
-                                                    >
-                                                        <Zap className="h-4 w-4"/>
-                                                    </Button>
+                                            <div className="relative bg-background border rounded-xl p-4 shadow-sm h-full">
+                                                <div className="flex gap-3 h-full">
+                                                    <div className="flex-1 flex flex-col">
+                                                        <Textarea
+                                                            value={promptStructure.customPrompt}
+                                                            onChange={(e) => setPromptStructure(prev => ({
+                                                                ...prev,
+                                                                customPrompt: e.target.value
+                                                            }))}
+                                                            placeholder="Describe your pixel art animation..."
+                                                            className="flex-1 resize-none border-0 bg-transparent text-sm focus-visible:ring-0 focus-visible:ring-offset-0 p-3"
+                                                        />
+                                                    </div>
+                                                    <div className="flex flex-col gap-2 justify-center">
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => fileInputRef.current?.click()}
+                                                                    className="h-8 w-8 p-0 hover:bg-accent"
+                                                                >
+                                                                    <Upload className="h-4 w-4"/>
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>Upload reference images</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={handleImprovePrompt}
+                                                                    disabled={isImprovingPrompt}
+                                                                    className="h-8 w-8 p-0 hover:bg-accent"
+                                                                >
+                                                                    {isImprovingPrompt ? (
+                                                                        <RefreshCw className="h-4 w-4 animate-spin"/>
+                                                                    ) : (
+                                                                        <Zap className="h-4 w-4"/>
+                                                                    )}
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>Enhance prompt with AI</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <motion.div whileHover={{scale: 1.05}} whileTap={{scale: 0.95}}>
+                                                                    <Button
+                                                                        onClick={handleGenerate}
+                                                                        disabled={isGenerating}
+                                                                        className="h-8 w-8 p-0 bg-primary hover:bg-primary/90 text-primary-foreground"
+                                                                    >
+                                                                        {isGenerating ? (
+                                                                            <RefreshCw className="h-4 w-4 animate-spin"/>
+                                                                        ) : (
+                                                                            <Sparkles className="h-4 w-4"/>
+                                                                        )}
+                                                                    </Button>
+                                                                </motion.div>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>Generate pixel art animation</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <motion.div whileHover={{scale: 1.02}} whileTap={{scale: 0.98}}>
-                                            <Button
-                                                onClick={handleGenerate}
-                                                disabled={isGenerating}
-                                                className="font-pixel text-xs tracking-wider h-12 px-6"
-                                            >
-                                                {isGenerating ? (
-                                                    <>
-                                                        <RefreshCw className="h-4 w-4 mr-2 animate-spin"/>
-                                                        GENERATING...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Sparkles className="h-4 w-4 mr-2"/>
-                                                        GENERATE
-                                                    </>
-                                                )}
-                                            </Button>
-                                        </motion.div>
                                     </div>
                                 </div>
                             </motion.div>
@@ -752,7 +887,7 @@ export default function Home() {
                     <ResizableHandle withHandle className="hidden xl:flex"/>
 
                     {/* Right Configuration Panel */}
-                    <ResizablePanel defaultSize={18} minSize={18} maxSize={35} className="hidden xl:block">
+                    <ResizablePanel defaultSize={15} minSize={15} maxSize={35} className="hidden xl:block">
 
                         <motion.div
                             className="h-full border-l flex flex-col"
@@ -1038,8 +1173,11 @@ export default function Home() {
                                                     whileTap={{scale: 0.98}}
                                                 >
                                                     <div className="flex items-start justify-between mb-2">
-                                                        <div className="flex-1">
-                                                            <p className="text-xs font-pixel line-clamp-2 tracking-wide">
+                                                        <div className="flex-1 min-w-0 mr-2">
+                                                            <p className="text-xs font-pixel font-semibold tracking-wide truncate mb-1">
+                                                                {item.animation.name}
+                                                            </p>
+                                                            <p className="text-xs font-pixel line-clamp-2 tracking-wide text-muted-foreground">
                                                                 {item.prompt}
                                                             </p>
                                                             <p className="text-xs text-muted-foreground mt-1 font-pixel">
@@ -1054,7 +1192,7 @@ export default function Home() {
                                                                 deleteHistoryItem(item.id)
                                                                 loadHistory()
                                                             }}
-                                                            className="h-6 w-6 p-0"
+                                                            className="h-6 w-6 p-0 shrink-0"
                                                         >
                                                             <Trash2 className="h-3 w-3"/>
                                                         </Button>

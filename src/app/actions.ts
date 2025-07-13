@@ -10,6 +10,7 @@ export interface PixelArtFrame {
 
 export interface PixelArtAnimation {
   id: string
+  name: string
   frames: PixelArtFrame[]
   prompt: string
   createdAt: number
@@ -72,6 +73,7 @@ export async function generatePixelArt(
   
   const animation: PixelArtAnimation = {
     id: animationId,
+    name: `${promptStructure.style} ${promptStructure.object}`,
     frames,
     prompt: fullPrompt,
     createdAt: Date.now(),
@@ -160,6 +162,29 @@ export async function clearHistory(): Promise<void> {
   revalidatePath('/')
 }
 
+// Animation sharing between editor and main page
+export async function saveAnimationFromEditor(animation: PixelArtAnimation): Promise<void> {
+  // Add animation to history
+  history.unshift({
+    id: `history_${Date.now()}`,
+    prompt: animation.prompt,
+    animation: animation,
+    createdAt: Date.now()
+  })
+  
+  // Keep only last 50 items
+  if (history.length > 50) {
+    history = history.slice(0, 50)
+  }
+  
+  revalidatePath('/')
+}
+
+export async function getAnimationForEditor(animationId: string): Promise<PixelArtAnimation | null> {
+  const historyItem = history.find(item => item.animation.id === animationId)
+  return historyItem?.animation || null
+}
+
 // Helper function to build prompt from structure
 function buildPromptFromStructure(structure: PromptStructure): string {
   const parts = []
@@ -200,6 +225,6 @@ function createMockPixelArt(prompt: string, frameIndex: number, style: string): 
     ]
   }
   
-  const variations = styleVariations[style] || styleVariations['pixel art']
+  const variations = styleVariations[style as keyof typeof styleVariations] || styleVariations['pixel art']
   return variations[frameIndex % variations.length]
 } 
